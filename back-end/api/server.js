@@ -3,12 +3,16 @@ import cors from "cors";
 import { db } from "./connect.js";
 import path from "path";
 
-const __dirname = path.resolve();
+// Corrigindo __dirname para módulos ES
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// const __dirname = path.resolve();
 
 const app = express();
 const PORT = 5000;
 
 app.use(cors());
+app.use(express.json());
 
 // Rotas da API com melhor tratamento de erro
 app.get("/api/", (request, response) => {
@@ -98,8 +102,51 @@ app.get("/api/songs", async (request, response) => {
 app.use(express.static(path.join(__dirname, "../../front-end/dist")));
 
 app.get("*", async (request, response) => {
-  response.sendFile(path.join(__dirname, "../../../front-end/dist/index.html"));
+  response.sendFile(path.join(__dirname, "../../front-end/dist/index.html"));
 });
+
+// Detectar o caminho correto para o frontend baseado no ambiente
+let frontendPath;
+const possiblePaths = [
+  path.join(__dirname, "../../front-end/dist"), // Local dev
+  path.join(__dirname, "../../../front-end/dist"), // Render
+  path.join(__dirname, "../front-end/dist"), // Outro possível caminho
+  path.join(process.cwd(), "front-end/dist"), // Usando o diretório de trabalho atual
+];
+
+// Percorre os possíveis caminhos e usa o primeiro que existir
+for (const pathToCheck of possiblePaths) {
+  try {
+    if (fs.existsSync(pathToCheck)) {
+      console.log(`✅ Encontrado diretório frontend em: ${pathToCheck}`);
+      frontendPath = pathToCheck;
+      break;
+    }
+  } catch (err) {
+    console.log(`❌ Diretório não encontrado: ${pathToCheck}`);
+  }
+}
+
+if (!frontendPath) {
+  console.warn(
+    "⚠️ AVISO: Nenhum caminho do frontend encontrado! Servindo apenas a API."
+  );
+} else {
+  // Serve arquivos estáticos
+  app.use(express.static(frontendPath));
+
+  // Rota wildcard para o SPA
+  app.get("*", (request, response) => {
+    const indexPath = path.join(frontendPath, "index.html");
+
+    // Verifica se o arquivo existe antes de enviá-lo
+    if (fs.existsSync(indexPath)) {
+      response.sendFile(indexPath);
+    } else {
+      response.status(404).send(`Arquivo não encontrado: ${indexPath}`);
+    }
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Servidor escutando na porta ${PORT}`);
