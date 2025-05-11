@@ -18,38 +18,43 @@ app.get("/api/", (request, response) => {
 app.get("/api/debug", (request, response) => {
   // Rota de debug para verificar as configurações atuais
   response.json({
-    environment: process.env.NODE_ENV || 'development',
+    environment: process.env.NODE_ENV || "development",
     mongodb_connected: !!db,
     collections: db ? Object.keys(db.collections) : [],
     current_directory: process.cwd(),
-    dirname: __dirname
+    dirname: __dirname,
   });
 });
 
 app.get("/api/artists", async (request, response) => {
   try {
     console.log("📊 Consultando coleção 'artists'...");
-    
+
     // Verificar se o db está definido
     if (!db) {
       console.error("❌ Erro: Conexão com o banco de dados não estabelecida");
-      return response.status(500).json({ error: "Conexão com o banco de dados não estabelecida" });
+      return response
+        .status(500)
+        .json({ error: "Conexão com o banco de dados não estabelecida" });
     }
-    
+
     // Verificar se a coleção existe
     const collections = await db.listCollections().toArray();
-    const collectionNames = collections.map(c => c.name);
+    const collectionNames = collections.map((c) => c.name);
     console.log("📚 Coleções disponíveis:", collectionNames);
-    
-    if (!collectionNames.includes('artists')) {
+
+    if (!collectionNames.includes("artists")) {
       console.error("❌ Erro: Coleção 'artists' não encontrada");
-      return response.status(404).json({ error: "Coleção 'artists' não encontrada", availableCollections: collectionNames });
+      return response.status(404).json({
+        error: "Coleção 'artists' não encontrada",
+        availableCollections: collectionNames,
+      });
     }
-    
+
     // Consultar a coleção
     const artists = await db.collection("artists").find({}).toArray();
     console.log(`✅ Encontrados ${artists.length} artistas`);
-    
+
     response.json(artists);
   } catch (error) {
     console.error("❌ Erro ao consultar artistas:", error);
@@ -60,15 +65,17 @@ app.get("/api/artists", async (request, response) => {
 app.get("/api/songs", async (request, response) => {
   try {
     console.log("📊 Consultando coleção 'songs'...");
-    
+
     if (!db) {
       console.error("❌ Erro: Conexão com o banco de dados não estabelecida");
-      return response.status(500).json({ error: "Conexão com o banco de dados não estabelecida" });
+      return response
+        .status(500)
+        .json({ error: "Conexão com o banco de dados não estabelecida" });
     }
-    
+
     const songs = await db.collection("songs").find({}).toArray();
     console.log(`✅ Encontrados ${songs.length} músicas`);
-    
+
     response.json(songs);
   } catch (error) {
     console.error("❌ Erro ao consultar músicas:", error);
@@ -91,7 +98,7 @@ app.get("/api/songs", async (request, response) => {
 app.use(express.static(path.join(__dirname, "../../front-end/dist")));
 
 app.get("*", async (request, response) => {
-  response.sendFile(path.join(__dirname, "../../front-end/dist/index.html"));
+  response.sendFile(path.join(__dirname, "../../../front-end/dist/index.html"));
 });
 
 app.listen(PORT, () => {
