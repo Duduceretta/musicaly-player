@@ -2,6 +2,8 @@ import express from "express";
 import cors from "cors";
 import { db } from "./connect.js";
 import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 
 // Corrigindo __dirname para módulos ES
 const __filename = fileURLToPath(import.meta.url);
